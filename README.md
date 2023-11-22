@@ -47,7 +47,7 @@ You will also need to set up a project in the Firebase console. And then provide
 const docRef = doc(db, 'spaceship', game.studyID, 'subjects', uid);
 ```
 
-More information on how I typically use Firebase is available in (this blog post)[https://tobywise.com/posts/firebase-for-online-testing/].
+More information on how I typically use Firebase is available in [this blog post](https://tobywise.com/posts/firebase-for-online-testing/).
 
 ### Other databases
 
