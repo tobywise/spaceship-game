@@ -345,7 +345,7 @@ class GameScene extends Phaser.Scene {
         this.updateSpaceshipAndFire();
 
         // Check for attention check responses
-        this.handleAttentionCheckResponse();
+        // this.handleAttentionCheckResponse();
 
         // Update score display
         this.updateScoreDisplay();
@@ -399,16 +399,16 @@ class GameScene extends Phaser.Scene {
         }
     }
 
-    handleAttentionCheckResponse() {
-        if (this.attentionCheck) {
-            if (this.attentionCheckKey.isDown) {
-                this.cache.game.attention_checks.push(true);
-                this.instructionText.setText("");
-                this.attentionCheck = false;
-                this.attentionUpdate = null;
-            }
-        }
-    }
+    // handleAttentionCheckResponse() {
+    //     if (this.attentionCheck) {
+    //         if (this.attentionCheckKey.isDown) {
+    //             this.cache.game.attention_checks.push(true);
+    //             this.instructionText.setText("");
+    //             this.attentionCheck = false;
+    //             this.attentionUpdate = null;
+    //         }
+    //     }
+    // }
 
     handleAttentionCheck() {
 
@@ -447,7 +447,7 @@ class GameScene extends Phaser.Scene {
         ) {
 
             // Do attention check
-            this.handleAttentionCheck();
+            // this.handleAttentionCheck();
 
             if (this.trialUpdate == null) {
                 this.trialUpdate = this.time.addEvent({

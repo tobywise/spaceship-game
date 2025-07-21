@@ -1,23 +1,52 @@
 // Importing necessary modules and components
 
-// Firebase modules and components - this may need to be changed if using a different database setup
-import { uid, auth, db } from './firebaseSetup.js';
-import { doc, setDoc } from 'https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js';
-
 // Task-specific modules and components
 import config from './config.js';
 import gameConfig from './gameConfig.js';
 import { getQueryVariable } from './utils.js';
 
 
-// Extract or generate subjectID, studyID, and testing variable based on the URL
-const subjectID = window.location.search.includes('SUBJECT_ID') ? getQueryVariable('SUBJECT_ID') : Math.floor(Math.random() * 2000001);
+// Extract or generate studyID and testing variable based on the URL
 const studyID = window.location.search.includes('STUDY') ? getQueryVariable('STUDY') : 'NONE';
-// Testing variable limits the number of trials to 2, allowing the "full" task to be run quickly
 const testing = window.location.search.includes('TEST') ? getQueryVariable('TEST') : 'FALSE';
 
 // The startGame function initializes the game when the user decides to start it
+
 const startGame = () => {
+    // Get subject ID and session from input fields
+    const subjectIdInput = document.getElementById('subjectIdInput');
+    const sessionInput = document.getElementById('sessionInput');
+    let subjectID = subjectIdInput && subjectIdInput.value ? subjectIdInput.value.trim() : '';
+    let session = sessionInput && sessionInput.value.trim() !== '' ? sessionInput.value : '1';
+
+    // If subjectID is empty, show error and do not start
+    if (!subjectID) {
+        let errorBox = document.getElementById('subjectIdError');
+        if (!errorBox) {
+            errorBox = document.createElement('div');
+            errorBox.id = 'subjectIdError';
+            errorBox.style.color = 'red';
+            errorBox.style.marginTop = '10px';
+            errorBox.style.fontWeight = 'bold';
+            errorBox.innerText = 'Please enter a Subject ID before starting.';
+            const subjectIdSection = document.getElementById('subjectIdSection');
+            subjectIdSection.appendChild(errorBox);
+        }
+        return;
+    } else {
+        // Remove error box if present
+        const errorBox = document.getElementById('subjectIdError');
+        if (errorBox) {
+            errorBox.remove();
+        }
+    }
+
+    // Hide subject/session input fields when game starts
+    const subjectIdSection = document.getElementById('subjectIdSection');
+    if (subjectIdSection) {
+        subjectIdSection.style.display = 'none';
+    }
+
     // Clearing the start element and positioning the window to the top
     document.getElementById('start').innerHTML = "";
     window.scrollTo(0, 0);
@@ -42,7 +71,8 @@ const startGame = () => {
                 player_trial: 0,
                 data: {},
                 dataKeys: ['health', 'hole1_y', 'hole2_y', 'player_y', 'score', 'subjectID', 'trial', 'trial_type'],
-                subjectID,
+                id: subjectID,
+                session: session,
                 studyID,
                 testing,
                 iti: config.iti, // Accessing iti from config
@@ -56,24 +86,7 @@ const startGame = () => {
                 completion_url: config.completion_url // Accessing completion_url from config
             });
 
-            // Setting up initial data structure for the current game in Firestore
-            const docRef = doc(db, 'spaceship', game.studyID, 'subjects', uid);
-            setDoc(docRef, {
-                subjectID: game.subjectID,
-                date: new Date().toLocaleDateString(),
-                time: new Date().toLocaleTimeString(),
-                trial_data: [],
-                attention_checks: []
-            }).catch(error => {
-                console.error("Error writing to Firestore: ", error);
-            });
-            
-            // Store database reference
-            game.db = db;
-            game.docRef = docRef;
-
             // Assigning other necessary properties to the game object
-            game.uid = uid;
             game.start_time = new Date();
             game.attention_checks = [];
         })
@@ -86,7 +99,6 @@ const startGame = () => {
 document.getElementById('header_title').innerHTML = "Spaceship game";
 document.getElementById('start').innerHTML = `
     <br>
-    <b>This task includes attention checks. <br>When a warning appears on screen you will need to press the D key on your keyboard</b>
     <p>Click below to start</p>
     <button type="button" id="startButton" class="submit_button">Start Experiment</button>
     <br><br>`;

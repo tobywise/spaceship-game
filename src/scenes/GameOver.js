@@ -1,5 +1,3 @@
-import { collection, doc, setDoc } from 'https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js' // Importing Firestore methods
-
 class GameOver extends Phaser.Scene {
 
     init(data) {
@@ -79,13 +77,28 @@ class GameOver extends Phaser.Scene {
     }
 
     async saveData() {
-
+        // Prepare payload for API
+        const payload = {
+            id: this.cache.game.id,
+            session: this.cache.game.session,
+            task: this.cache.game.task || 'spaceship',
+            write_mode: 'overwrite',
+            data: Array.isArray(this.cache.game.data) ? this.cache.game.data : Object.values(this.cache.game.data)
+        };
         try {
-            // Using setDoc to write data to the Firestore.
-            await setDoc(this.cache.game.docRef, { trial_data: this.cache.game.data });
+            const response = await fetch('http://localhost:5000/submit_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (!result.success) {
+                console.error('API error:', result.message);
+            }
         } catch (err) {
-            // Logging the error to console in case of a failure.
-            console.error("Error writing document: ", err);
+            console.error('Error sending data to API:', err);
         }
     }
 }

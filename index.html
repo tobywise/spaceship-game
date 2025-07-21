@@ -11,6 +11,22 @@
         <div class="form" id="mainSection">
             <header class="form__header" id="header"><h2 id="header_title" class="form__title"></h2></header>
             <section class="mainInstructions" id="start"></section>
+            <div id="subjectIdSection" style="text-align:center; margin-top:20px;">
+                <label for="subjectIdInput">Subject ID:</label>
+                <input type="text" id="subjectIdInput" name="subjectIdInput" placeholder="Enter subject ID" style="font-size:14px;" />
+                <br><br>
+                <label for="sessionInput">Session:</label>
+                <input type="text" id="sessionInput" name="sessionInput" placeholder="Session (default: 1)" style="font-size:14px;" />
+                <div style="font-size:12px; color:#888; margin-top:4px;">Leave blank for session 1</div>
+            </div>
         </div>
+        <script>
+            const subjectIdInput = document.getElementById('subjectIdInput');
+            const startButton = document.getElementById('startButton');
+            subjectIdInput.addEventListener('input', function() {
+                startButton.disabled = subjectIdInput.value.trim() === '';
+            });
+            startButton.disabled = subjectIdInput.value.trim() === '';
+        </script>
      </body>
  </html>

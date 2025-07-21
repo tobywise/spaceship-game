@@ -24,113 +24,40 @@ There are two variables in the JSON file, `positions_A` and `positions_B`, which
 
 ## Saving data
 
-### Google Firebase
+### API-based data saving
 
-The task is currently set up to save data to a [Google Firebase Firestore database](https://firebase.google.com/docs/firestore). To use this feature, you will need to create a Firebase project and add the project's credentials to the `firebaseConfig` variable in `src/firebaseSetup`: 
+This version of the task saves data by sending a POST request to a local API endpoint (`/submit_data`) provided by the [local data server package](https://github.com/the-wise-lab/EEG-task-data-server). The server should be running on `localhost:5000`.
 
-```javascript
-// src/firebaseSetup.js
-const firebaseConfig = {
-  apiKey: "your-api-key",
-  authDomain: "your-auth-domain",
-  projectId: "your-project-id",
-  storageBucket: "your-storage-bucket",
-  messagingSenderId: "your-messaging-sender-id",
-  appId: "your-app-id",
-};
+This sends all of the data so far on every call, so we use the "overwrite" write mode to replace the previous data.
+
+**Endpoint:** `POST /submit_data`
+
+**Request format:**
+
+```json
+{
+  "id": "participant_id",
+  "session": "session_number",
+  "task": "spaceship",  // Optional: identifies the task type
+  "write_mode": "overwrite",  // Optional: "append" (default) or "overwrite"
+  "data": [
+    {"time": 1000, "value": 0.5, "marker": "stimulus_1"},
+    {"time": 2000, "value": 0.7, "marker": "response_1"}
+  ]
+}
 ```
 
-You will also need to set up a project in the Firebase console. And then provide the reference to this in the `src/index.js` file:
+**Response:**
 
-```javascript
-// src/index.js
-const docRef = doc(db, 'spaceship', game.studyID, 'subjects', uid);
+```json
+{
+  "success": true,
+  "message": "Data appended for participant ...",
+  "filename": "data/participant_...csv",
+  "records_added": 2,
+  "total_records": 5,
+  "write_mode": "overwrite"
+}
 ```
 
-More information on how I typically use Firebase is available in (this blog post)[https://tobywise.com/posts/firebase-for-online-testing/].
-
-### Other databases
-
-Do you use a custom database, you will need to add in your own database code, replacing the Firebase code that is currently used. You can likely use a similar approach to that used for Firebase for any other database with a JavaScript API:
-
-#### 1. Setup the database
-
-The Firebase database is currently initialised in `src/firebaseSetup.js`. Equivalent code for your database will need to be added here. This can export relevant variables to be used in the main task code. For firebase, this looks like:
-
-```javascript
-// src/firebaseSetup.js
-export { uid, auth, db };
-```
-
-Which are then imported in `src/index.js`:
-
-```javascript
-// src/index.js
-import { uid, auth, db } from './firebaseSetup.js';
-```
-
-#### 2. Initialise the subject in the database
-
-It's useful to create an entry for the subject before we start saving task data. This can also include relevant metadata (e.g., time, date). This is currently done in `src/index.js` for firebase, using the `db` and `uid` variables exported from `src/firebaseSetup.js`:
-
-```javascript
-// src/index.js
-const docRef = doc(db, 'spaceship', game.studyID, 'subjects', uid);
-setDoc(docRef, {
-    subjectID: game.subjectID,
-    date: new Date().toLocaleDateString(),
-    time: new Date().toLocaleTimeString(),
-    trial_data: [],
-    attention_checks: []
-}).catch(error => {
-    console.error("Error writing to Firestore: ", error);
-});
-```
-
-This can be replaced by equivalent code for other databases.
-
-We also store references to the `docRef` and `db` variables so that these can be reused throughout the task in other code. Again, this practice could be followed for other databases:
-
-```javascript
-// src/index.js
-game.docRef = docRef;
-game.db = db;
-```
-
-#### 3. Save data to the database
-
-The task stores data in the `this.cache.game.data` variable (there is technically a more correct way to do this, but this works fine). This is a standard JavaScript object, and so can be saved to the database in a similar way to how it is saved to Firebase.
-
-Data is currently saved in two places: 
-
-1. In the `gameOver.js` scene, which is reached whenever the subject loses all their health. This saves all of the data currently recorded to the database. For Firebase, this is implemented as follows:
-
-```javascript
-// src/scenes/gameOver.js
-await setDoc(this.cache.game.docRef, { trial_data: this.cache.game.data });
-```
-
-2. In the `endScene.js` scene, which is reached when the task ends. This saves the data to the database. For Firebase, this is implemented as follows, and could again be replaced by equivalent code for other databases:
-
-```javascript
-// src/scenes/endScene.js
-setDoc(this.cache.game.docRef, {
-    trial_data: this.cache.game.data
-}) 
-```
-
-Note that each time we save data we record the entirety of the data collected so far. This is not the most efficient way to do this, but it is the simplest and protects against errors in the data saving process.
-
-#### Databases without JavaScript APIs
-
-Alternatively, much of the above code can be substituted with HTTP requests to a server-side script. For example, the following code could be used to save data to a PHP script:
-
-```javascript
-// src/scenes/gameOver.js
-const data = new FormData();
-data.append('data', JSON.stringify(this.cache.game.data));
-fetch('saveData.php', {
-    method: 'POST',
-    body: data
-});
-```
+See the code in `src/scenes/GameOver.js` and `src/scenes/EndScene.js` for implementation details.

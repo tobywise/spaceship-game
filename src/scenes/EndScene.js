@@ -1,5 +1,3 @@
-import { collection, doc, setDoc } from 'https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js' // Importing Firestore methods
-
 class EndScene extends Phaser.Scene {
     constructor() {
         super({
@@ -12,23 +10,35 @@ class EndScene extends Phaser.Scene {
         this.topScore = data.topScore;
     }
 
-    create() {
+    async create() {
         // Calculate the time taken for the game
         const time_taken = (new Date() - this.cache.game.start_time) / 60000; // Converted to minutes
-        
-        // Update the document with the trial data
-        setDoc(this.cache.game.docRef, {
-            trial_data: this.cache.game.data
-        }) 
-        .then(() => {
-            // Once the data is saved, add the questionnaire to the page
-            this.addText();
-        })
-        .catch((error) => {
-            console.error("Error writing document: ", error);
-            // Even if there is an error saving the data, add the questionnaire to the page
-            this.addText();
-        });
+
+        // Prepare payload for API
+        const payload = {
+            id: this.cache.game.id,
+            session: this.cache.game.session,
+            task: this.cache.game.task || 'spaceship',
+            write_mode: 'overwrite',
+            data: Array.isArray(this.cache.game.data) ? this.cache.game.data : Object.values(this.cache.game.data)
+        };
+        try {
+            const response = await fetch('http://localhost:5000/submit_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (!result.success) {
+                console.error('API error:', result.message);
+            }
+        } catch (err) {
+            console.error('Error sending data to API:', err);
+        }
+        // Add the questionnaire to the page regardless of API result
+        this.addText();
     }
 
     addText() {
